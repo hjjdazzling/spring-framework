@@ -295,9 +295,7 @@ configure(allprojects) { project ->
 			maven { url 'https://maven.aliyun.com/nexus/content/repositories/jcenter' }
 			mavenCentral()
 			maven { url "https://repo.spring.io/libs-spring-framework-build" }
-			maven { url "https://repo.spring.io/milestone" } // Reactor
-			//新增spring插件库
-			maven { url "https://repo.spring.io/plugins-release" }
+			maven { url "https://repo.spring.io/snapshot" } // reactor
 		}
 	}
 	configurations.all {
