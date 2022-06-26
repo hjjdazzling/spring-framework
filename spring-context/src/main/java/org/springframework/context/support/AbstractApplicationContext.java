@@ -569,9 +569,11 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				beanPostProcess.end();
 
 				// Initialize message source for this context.
+				//国际化相关的
 				initMessageSource();
 
 				// Initialize event multicaster for this context.
+				// 事件传播器
 				initApplicationEventMulticaster();
 
 				// Initialize other special beans in specific context subclasses.
@@ -581,9 +583,11 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 				registerListeners();
 
 				// Instantiate all remaining (non-lazy-init) singletons.
+				// 把所有的非懒加载的实例 放进IOC容器
 				finishBeanFactoryInitialization(beanFactory);
 
 				// Last step: publish corresponding event.
+				//
 				finishRefresh();
 			}
 

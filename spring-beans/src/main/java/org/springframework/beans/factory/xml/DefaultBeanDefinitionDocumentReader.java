@@ -127,7 +127,7 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 		// this behavior emulates a stack of delegates without actually necessitating one.
 		BeanDefinitionParserDelegate parent = this.delegate;
 		this.delegate = createDelegate(getReaderContext(), root, parent);
-
+		//处理profile标签    环境隔离  pro/pre/dev
 		if (this.delegate.isDefaultNamespace(root)) {
 			String profileSpec = root.getAttribute(PROFILE_ATTRIBUTE);
 			if (StringUtils.hasText(profileSpec)) {
@@ -136,6 +136,7 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 				// We cannot use Profiles.of(...) since profile expressions are not supported
 				// in XML config. See SPR-12458 for details.
 				if (!getReaderContext().getEnvironment().acceptsProfiles(specifiedProfiles)) {
+					//如果不是指定的环境 直接退出 不加载bean
 					if (logger.isDebugEnabled()) {
 						logger.debug("Skipped XML bean definition file due to specified profiles [" + profileSpec +
 								"] not matching: " + getReaderContext().getResource());
@@ -144,9 +145,11 @@ public class DefaultBeanDefinitionDocumentReader implements BeanDefinitionDocume
 				}
 			}
 		}
-
+		//空实现 留给子类扩展的地方  处理xml文件之前
 		preProcessXml(root);
+		//解析xml标签  最最重要的地方
 		parseBeanDefinitions(root, this.delegate);
+		//空实现 留给子类扩展的地方 处理xml文件之后
 		postProcessXml(root);
 
 		this.delegate = parent;
