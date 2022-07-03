@@ -1456,18 +1456,6 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	//---------------------------------------------------------------------
 
 	/**
-	 * Subclasses must implement this method to perform the actual configuration load.
-	 * The method is invoked by {@link #refresh()} before any other initialization work.
-	 * <p>A subclass will either create a new bean factory and hold a reference to it,
-	 * or return a single BeanFactory instance that it holds. In the latter case, it will
-	 * usually throw an IllegalStateException if refreshing the context more than once.
-	 * @throws BeansException if initialization of the bean factory failed
-	 * @throws IllegalStateException if already initialized and multiple refresh
-	 * attempts are not supported
-	 */
-	protected abstract void refreshBeanFactory() throws BeansException, IllegalStateException;
-
-	/**
 	 * Subclasses must implement this method to release their internal bean factory.
 	 * This method gets invoked by {@link #close()} after all other shutdown work.
 	 * <p>Should never throw an exception but rather log shutdown failures.
@@ -1489,6 +1477,18 @@ public abstract class AbstractApplicationContext extends DefaultResourceLoader
 	 */
 	@Override
 	public abstract ConfigurableListableBeanFactory getBeanFactory() throws IllegalStateException;
+
+	/**
+	 * Subclasses must implement this method to perform the actual configuration load.
+	 * The method is invoked by {@link #refresh()} before any other initialization work.
+	 * <p>A subclass will either create a new bean factory and hold a reference to it,
+	 * or return a single BeanFactory instance that it holds. In the latter case, it will
+	 * usually throw an IllegalStateException if refreshing the context more than once.
+	 * @throws BeansException if initialization of the bean factory failed
+	 * @throws IllegalStateException if already initialized and multiple refresh
+	 * attempts are not supported
+	 */
+	protected abstract void refreshBeanFactory() throws BeansException, IllegalStateException;
 
 
 	/**
