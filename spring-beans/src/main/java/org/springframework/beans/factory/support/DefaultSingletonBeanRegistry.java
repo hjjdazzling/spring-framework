@@ -90,9 +90,11 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	private final Map<String, Object> earlySingletonObjects = new ConcurrentHashMap<>(16);
 
 	/** Set of registered singletons, containing the bean names in registration order. */
+	//已经注册的实例集合
 	private final Set<String> registeredSingletons = new LinkedHashSet<>(256);
 
 	/** Names of beans that are currently in creation. */
+	//正在的bean
 	private final Set<String> singletonsCurrentlyInCreation =
 			Collections.newSetFromMap(new ConcurrentHashMap<>(16));
 
@@ -114,9 +116,11 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	private final Map<String, Set<String>> containedBeanMap = new ConcurrentHashMap<>(16);
 
 	/** Map between dependent bean names: bean name to Set of dependent bean names. */
+	//key是bean的名称  value是依赖这个bean的   别人依赖自己的
 	private final Map<String, Set<String>> dependentBeanMap = new ConcurrentHashMap<>(64);
 
 	/** Map between depending bean names: bean name to Set of bean names for the bean's dependencies. */
+	//key是bean的名称  value是自己依赖的   自己依赖的别人的
 	private final Map<String, Set<String>> dependenciesForBeanMap = new ConcurrentHashMap<>(64);
 
 
@@ -179,26 +183,42 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	 * <p>Checks already instantiated singletons and also allows for an early
 	 * reference to a currently created singleton (resolving a circular reference).
 	 * @param beanName the name of the bean to look for
-	 * @param allowEarlyReference whether early references should be created or not
+	 * @param allowEarlyReference whether early references should be created or not   是否允许拿到早期引用
 	 * @return the registered singleton object, or {@code null} if none found
 	 */
 	@Nullable
 	protected Object getSingleton(String beanName, boolean allowEarlyReference) {
 		// Quick check for existing instance without full singleton lock
+		//从ioc容器中获取bean   一级缓存
 		Object singletonObject = this.singletonObjects.get(beanName);
+		//获取到直接返回
+		//没有获取到  1.懒加载  还没有创建  2.发生循环依赖正在创建
+		//如果没有获取到 并且正在创建中
 		if (singletonObject == null && isSingletonCurrentlyInCreation(beanName)) {
+			//从二级缓存中
 			singletonObject = this.earlySingletonObjects.get(beanName);
+			//二级缓冲中的对象为null  并且允许获取早期的引用
 			if (singletonObject == null && allowEarlyReference) {
+				//注意锁的粒度是一级缓存
 				synchronized (this.singletonObjects) {
 					// Consistent creation of early reference within full singleton lock
+					//再从一级缓存中获取一次
 					singletonObject = this.singletonObjects.get(beanName);
+					//还是没有获取到
 					if (singletonObject == null) {
+						//再从二级缓存中
 						singletonObject = this.earlySingletonObjects.get(beanName);
+						//还是没有获取到
 						if (singletonObject == null) {
+							//从三级缓存中获取
 							ObjectFactory<?> singletonFactory = this.singletonFactories.get(beanName);
+
 							if (singletonFactory != null) {
+								//返回三级缓存中的对象
 								singletonObject = singletonFactory.getObject();
+								//放入二级缓存
 								this.earlySingletonObjects.put(beanName, singletonObject);
+								//从三级缓存中移除
 								this.singletonFactories.remove(beanName);
 							}
 						}
@@ -222,7 +242,9 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 		synchronized (this.singletonObjects) {
 			Object singletonObject = this.singletonObjects.get(beanName);
 			if (singletonObject == null) {
+
 				if (this.singletonsCurrentlyInDestruction) {
+					//bean容器正在销毁
 					throw new BeanCreationNotAllowedException(beanName,
 							"Singleton bean creation not allowed while singletons of this factory are in destruction " +
 							"(Do not request a bean from a BeanFactory in a destroy method implementation!)");
@@ -230,6 +252,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 				if (logger.isDebugEnabled()) {
 					logger.debug("Creating shared instance of singleton bean '" + beanName + "'");
 				}
+				//将beanName放入正在创建的集合Set中
 				beforeSingletonCreation(beanName);
 				boolean newSingleton = false;
 				boolean recordSuppressedExceptions = (this.suppressedExceptions == null);
@@ -237,6 +260,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 					this.suppressedExceptions = new LinkedHashSet<>();
 				}
 				try {
+					//创建单例对象
 					singletonObject = singletonFactory.getObject();
 					newSingleton = true;
 				}
@@ -260,9 +284,12 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 					if (recordSuppressedExceptions) {
 						this.suppressedExceptions = null;
 					}
+					//将beanName从正在创建的集合中移除
 					afterSingletonCreation(beanName);
 				}
+				//如果是个新的单例
 				if (newSingleton) {
+					//将实例放入一级缓存池  并从二三级缓存池中移除
 					addSingleton(beanName, singletonObject);
 				}
 			}
@@ -418,7 +445,14 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 	 */
 	public void registerDependentBean(String beanName, String dependentBeanName) {
 		String canonicalName = canonicalName(beanName);
+		//注册依赖关系
+		//<bean id ="a" depends-on="b">
+		//<bean id = b>
+		//dependentBeanMap   {"b" :{"a"}}
 
+		//dependenciesForBeanMap   {"a" :{"b"}}
+
+		//注册别人依赖自己
 		synchronized (this.dependentBeanMap) {
 			Set<String> dependentBeans =
 					this.dependentBeanMap.computeIfAbsent(canonicalName, k -> new LinkedHashSet<>(8));
@@ -426,7 +460,7 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 				return;
 			}
 		}
-
+		//注册自己依赖别人
 		synchronized (this.dependenciesForBeanMap) {
 			Set<String> dependenciesForBean =
 					this.dependenciesForBeanMap.computeIfAbsent(dependentBeanName, k -> new LinkedHashSet<>(8));
@@ -456,9 +490,12 @@ public class DefaultSingletonBeanRegistry extends SimpleAliasRegistry implements
 		if (dependentBeans == null) {
 			return false;
 		}
+		//发现循环依赖
 		if (dependentBeans.contains(dependentBeanName)) {
 			return true;
 		}
+
+		//处理A depends-on B  B depends-on C  C depends-on A
 		for (String transitiveDependency : dependentBeans) {
 			if (alreadySeen == null) {
 				alreadySeen = new HashSet<>();
