@@ -13,7 +13,6 @@ public class TestFactoryBean implements FactoryBean<Address> {
 	public Address getObject() throws Exception {
 		Address address = new Address();
 		address.setCity("成都");
-
 		return address;
 	}
 
